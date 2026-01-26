@@ -286,7 +286,7 @@
 
         // --- 3. POST CONTENT LOGIC ---
         const posts = [
-            {
+            /*{
                 id: 1,
                 title: "CompTIA Sec+ Writeup",
                 date: "18 August 2024",
@@ -356,8 +356,9 @@
                     </div>
                 `
             },
+            */
             {
-                id: 3,
+                id: 1,
                 title: "LetsDefend - SOC165 - SQL Injection Payload Detected",
                 date: "04 June 2025",
                 category: "LetsDefend",
@@ -399,48 +400,7 @@
                 `
             },
             {
-                id: 4,
-                title: "HTB - Beginning of the CPTS Journey",
-                date: "07 Dec 2025",
-                category: "HTB",
-                content: `
-                <h3>What is CPTS?</h3>
-                <p>
-                    The CPTS is HackTheBox's Certified Penetration Testing Specialist certification. 
-                    From the reviews I’ve seen on Reddit, it looks excellent—challenging, but very 
-                    highly rated!
-                </p>
-                <a href="https://academy.hackthebox.com/preview/certifications/htb-certified-penetration-testing-specialist" style="color:#4ecdc4">
-                    CPTS Link
-                </a>
-                <p>
-                    Even though I’m not completely sure what path I want to take after I graduate, 
-                    I figured it makes sense to get exposure to the training through the student 
-                    subscription and enjoy the process. Red teaming is super interesting, and gaining 
-                    hands-on experience now will definitely benefit me in the long run.
-                </p>
-
-                <h3>My Plan</h3>
-                <p>
-                    My plan is to alternate between the CDSA and CPTS paths. CDSA focuses on SOC roles, 
-                    and I was really enjoying it until a certain point. Eventually, learning the attack 
-                    paths started to feel a bit repetitive, and because the material was so long, I 
-                    ended up taking a break. Hopefully, switching between the two paths—without pressure 
-                    to rush through either—will help me maintain a steady pace and build skills across 
-                    both areas.
-                </p>
-
-                <h3>Estimated Timeline</h3>
-                <p>
-                    Estimating a timeline is tricky, but for the CPTS I’m aiming for around 3–4 months. 
-                    Realistically, since I’m a full-time student, 6–9 months is probably more accurate. 
-                    It really depends on Christmas break and how disciplined I am during the semester! 
-                    Hopefully I’ll get it done :)
-                </p>
-                `
-            },
-            /*{
-                id: 5,
+                id: 2,
                 title: "`CodePartTwo HTB Writeup",
                 date: "09 Dec 2025",
                 category: "Misc",
@@ -531,7 +491,51 @@
                 </p>
 
                 `
-            }*/
+            },
+            {
+                id: 3,
+                title: "Creating your own Malware Analysis Lab",
+                date: "26 January 2026",
+                category: "Misc",
+                content: `
+                <h3>Introduction</h3>
+                <p>
+                This tutorial only covers the creation of the lab through virtual box, it is possible to do it via the cloud but it just adds extra costs and is ultimately not worth the time it takes for configuration.
+                I have wrote this tutorial as a means to make it easier for a standard user to learn how to make the lab following clear steps, I also included some of the tools I have used for this Windows VLab (Virtual Lab).
+                </p>
+                <h3>Installing Required Files</h3>
+                <p>
+                As with any tutorial you will need to install virtual box and an ISO to allow us to run our virtual machine.
+                <br/>
+                <a href="https://www.virtualbox.org/wiki/Downloads"> Virtual Box download Link </a>
+
+                <br/>And the relevant ISO file can be downloaded here:
+                <br/>
+                <a href="https://www.microsoft.com/en-gb/software-download/windows10"> ISO link </a>
+                <br/>
+                If you have both of these files then hooray! We should be good to go.
+
+                <br/>
+                To get our Windows ISO file we must first run the installaion exe -> Select Option to create an ISO file -> Continue clicking next and save in a memorable location.
+                </p>
+
+                <h3>Virtual Box Setup</h3>
+                This is majorly self explanatory, click new -> select your ISO.
+                Allocate how much RAM and CPUs you want. 
+                Then go into  settings and allow host-only for the adapter to prevent the malware spreading in your network.
+
+                Add a user. 
+
+                And run.
+
+                I don't want to spend too long on this, but will continue :)
+
+                </p>
+
+                <h3>Additional Tools</h3>
+
+                `
+            }
         ];
 
         // 4. Load Content
