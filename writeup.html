@@ -27,7 +27,16 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-
+.code-block {
+        background-color: #0d1117;
+        color: #c9d1d9;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-family: 'Consolas', 'Monaco', monospace;
+        line-height: 1.4;
+        border: 1px solid #30363d;
+    }
         #starfield {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1; /* Behind everything */
@@ -535,7 +544,368 @@
                 <h3>Additional Tools</h3>
 
                 `
-            }
+            },
+            {
+                id: 4,
+                title: "Windows Internals For Forensics",
+                date: "28 January 2026",
+                category: "Blue Teaming",
+                content: `
+                <h3>Introduction</h3>
+                <p>
+                This is a comprehensive set of notes covering Windows Internals specifically for Digital Forensics and Incident Response (DFIR).
+                The goal is not to learn tools, but to understand how Windows works internally so that forensic artifacts (should hopefully xD) make sense.
+                <br /><br />
+                These notes are based primarily on:
+                <ul>
+                    <li>Windows Internals, Volume 1 (Processes, Threads, Memory)</li>
+                    <li>Hands-on labs from TryHackMe and LetsDefend</li>
+                </ul>
+                <br />
+                Windows 10 is used as the reference platform due to the volume of available documentation and real-world relevance.
+                </p>
+
+                <h3>High-Level Windows Architecture</h3>
+                <p>
+                Windows follows a <b>hybrid kernel architecture</b>, combining aspects of microkernel and monolithic designs.
+                </p>
+
+                <ul>
+                    <li><b>User Mode</b> – Applications run with restricted privileges</li>
+                    <li><b>Kernel Mode</b> – Core OS components with full system access</li>
+                </ul>
+
+                <p>
+                <b>Why this matters for DFIR:</b><br />
+                Malware frequently attempts to cross from user mode into kernel mode to evade detection, disable security controls,
+                or hide artifacts from user-mode forensic tools.
+                </p>
+
+                <h3>User Mode Components</h3>
+                <ul>
+                    <li><b>Applications</b> – User programs (browsers, Office, malware)</li>
+                    <li><b>Subsystem DLLs</b> – kernel32.dll, ntdll.dll, advapi32.dll</li>
+                    <li><b>Environment Subsystems</b> – Win32 (primary), WOW64</li>
+                </ul>
+
+                <p>
+                <b>Forensics note:</b><br />
+                Many malicious actions occur through legitimate Windows APIs (LOLBins), leaving forensic traces in logs,
+                memory, and registry artifacts rather than obvious malware files.
+                </p>
+
+                <h3>Kernel Mode Components</h3>
+                <ul>
+                    <li><b>Executive</b> – Object Manager, Process Manager, Memory Manager</li>
+                    <li><b>Kernel</b> – Thread scheduling, interrupt handling</li>
+                    <li><b>Device Drivers</b></li>
+                    <li><b>Hardware Abstraction Layer (HAL)</b></li>
+                </ul>
+
+                <p>
+                <b>DFIR relevance:</b><br />
+                Kernel drivers are often abused by advanced malware for persistence and stealth.
+                Driver loading events and unsigned drivers are high-value forensic indicators.
+                </p>
+
+                <h3>Processes</h3>
+                <p>
+                A <b>process</b> is a container for resources used by a running program.
+                </p>
+
+                <ul>
+                    <li>Virtual address space</li>
+                    <li>Executable image</li>
+                    <li>Handles to system objects</li>
+                    <li>Security token</li>
+                    <li>One or more threads</li>
+                </ul>
+
+                <p>
+                <b>Forensic artifacts related to processes:</b>
+                </p>
+                <ul>
+                    <li>Event ID 4688 (Process Creation)</li>
+                    <li>Prefetch files</li>
+                    <li>ShimCache / Amcache</li>
+                    <li>Memory-resident process structures</li>
+                </ul>
+
+                <p>
+                <b>Common attacker techniques:</b>
+                </p>
+                <ul>
+                    <li>Process hollowing</li>
+                    <li>Parent PID spoofing</li>
+                    <li>Masquerading (svchost.exe lookalikes)</li>
+                </ul>
+
+                <h3>Threads</h3>
+                <p>
+                A <b>thread</b> is the smallest unit of execution within a process.
+                Each process has at least one thread.
+                </p>
+
+                <ul>
+                    <li>Threads share process memory</li>
+                    <li>Each thread has its own stack and CPU context</li>
+                </ul>
+
+                <p>
+                <b>DFIR relevance:</b><br />
+                Malicious code often executes in injected threads inside legitimate processes.
+                Memory forensics is required to identify anomalous thread start addresses.
+                </p>
+
+                <h3>Handles and Objects</h3>
+                <p>
+                Windows is an object-based operating system.
+                Access to objects is performed via <b>handles</b>.
+                </p>
+
+                <ul>
+                    <li>Files</li>
+                    <li>Registry keys</li>
+                    <li>Processes</li>
+                    <li>Threads</li>
+                    <li>Mutexes</li>
+                </ul>
+
+                <p>
+                <b>Forensic importance:</b><br />
+                Handle tables in memory reveal which files, registry keys, or mutexes malware interacted with — even if files were deleted.
+                </p>
+
+                <h3>Security Tokens</h3>
+                <p>
+                Every process runs with a <b>security token</b> defining its privileges.
+                </p>
+
+                <ul>
+                    <li>User SID</li>
+                    <li>Group SIDs</li>
+                    <li>Privileges (SeDebugPrivilege, etc.)</li>
+                </ul>
+
+                <p>
+                <b>Attacker relevance:</b><br />
+                Privilege escalation attacks attempt to steal or duplicate tokens.
+                Token manipulation is detectable in memory and via audit logs.
+                </p>
+
+                <h3>Memory Management</h3>
+                <p>
+                Windows uses <b>virtual memory</b> to abstract physical RAM.
+                </p>
+
+                <ul>
+                    <li>Virtual address space per process</li>
+                    <li>Paging (pagefile.sys)</li>
+                    <li>Private vs shared memory</li>
+                </ul>
+
+                <p>
+                <b>DFIR relevance:</b>
+                </p>
+                <ul>
+                    <li>Fileless malware lives entirely in memory</li>
+                    <li>Injected DLLs may never touch disk</li>
+                    <li>Command history and decrypted credentials can reside in RAM</li>
+                </ul>
+
+                <h3>DLLs and Code Injection</h3>
+                <p>
+                Dynamic Link Libraries (DLLs) allow shared code execution across processes.
+                </p>
+
+                <ul>
+                    <li>Legitimate DLL loading</li>
+                    <li>Reflective DLL injection</li>
+                    <li>LoadLibrary abuse</li>
+                </ul>
+
+                <p>
+                <b>Forensic indicators:</b>
+                </p>
+                <ul>
+                    <li>Unexpected DLL paths</li>
+                    <li>Unsigned DLLs loaded into trusted processes</li>
+                    <li>Memory regions with executable permissions</li>
+                </ul>
+
+                <h3>Windows Services</h3>
+                <p>
+                Services are long-running background processes managed by the Service Control Manager (SCM).
+                </p>
+
+                <ul>
+                    <li>Auto-start services</li>
+                    <li>Delayed start services</li>
+                    <li>Service accounts</li>
+                </ul>
+
+                <p>
+                <b>DFIR relevance:</b><br />
+                Services are a common persistence mechanism.
+                Creation and modification events are critical forensic evidence.
+                </p>
+
+                <h3>Persistence Mechanisms (Windows Internals View)</h3>
+                <ul>
+                    <li>Registry Run keys</li>
+                    <li>Scheduled Tasks</li>
+                    <li>Services</li>
+                    <li>WMI Event Subscriptions</li>
+                    <li>Startup folders</li>
+                </ul>
+
+                <p>
+                Understanding how Windows initializes these components during boot is critical for identifying persistence.
+                </p>
+
+                <h3>Why Windows Internals Matter for DFIR</h3>
+                <p>
+                Tools change. Dashboards lie. Logs get deleted.
+                <br /><br />
+                Windows Internals knowledge allows you to:
+                </p>
+
+                <ul>
+                    <li>Understand <b>why</b> artifacts exist</li>
+                    <li>Detect attacker tradecraft without signatures</li>
+                    <li>Reconstruct activity from raw data</li>
+                    <li>Survive evasive malware and partial log loss</li>
+                </ul>
+
+                <p>
+                Mastery of Windows Internals is the foundation upon which memory forensics,
+                malware analysis, and advanced incident response are built.
+                </p>
+                `
+            },
+            {
+                id: 5,
+                title: "Easy Crack Me",
+                date: "04 June 2025",
+                category: "Malware",
+                content: `<h3>Introduction</h3>
+                 <p>This is a VERY EASY Reverse Engineering CTF from CrackMes.one</p>
+                 a href="https://crackmes.one/crackme/695b957ad7c572e88f5433f6"> link </a>
+                </p>
+
+                <h3>Steps To Pwn</h3>
+                <p>
+                Loading it into Ghidra and letting it analyse the file we find a main entry point.
+                 <img src="assets/writeups/CryptoMes/Entry.png" alt="command"/>
+
+                 From here there isn't a lot to go off - this would be described as boilerplate code and we can ignore. It looks more like the initialistion code.
+                 Anyways, looking further into the program we can search for strings in ghidra.
+                
+                 <img src="assets/writeups/CryptoMes/Strings.png" alt="command"/>
+
+                 This is essentially a goldmine, no obfuscation just simple human-readable strings :D
+             <div class="code-block">
+              <pre><code>
+                /* WARNING: Function: _guard_dispatch_icall replaced with injection: guard_dispatch_icall */
+
+
+                ulonglong FUN_140001e1c(void)
+
+
+                {
+                bool bVar1;
+                bool bVar2;
+                int iVar3;
+                undefined8 uVar4;
+                longlong *plVar5;
+                ulonglong uVar6;
+                undefined8 uVar7;
+                undefined8 *puVar8;
+                uint *puVar9;
+                ulonglong uVar10;
+                undefined8 unaff_RBX;
+                undefined8 in_R9;
+                undefined1 uVar11;
+
+
+                iVar3 = (int)unaff_RBX;
+                uVar4 = FUN_140001fe8(1);
+                if ((char)uVar4 == '\0') {
+                    FUN_14000235c(7);
+                }
+                else {
+                    bVar1 = false;
+                    uVar11 = 0;
+                    uVar4 = __scrt_acquire_startup_lock();
+                    iVar3 = (int)CONCAT71((int7)((ulonglong)unaff_RBX >> 8),(char)uVar4);
+                    if (DAT_140005190 != 1) {
+                    if (DAT_140005190 == 0) {
+                        DAT_140005190 = 1;
+                        iVar3 = _initterm_e(&DAT_1400032d0,&DAT_1400032e8);
+                        if (iVar3 != 0) {
+                        return 0xff;
+                        }
+                        _initterm(&DAT_1400032b0,&DAT_1400032c8);
+                        DAT_140005190 = 2;
+                    }
+                    else {
+                        bVar1 = true;
+                        uVar11 = 1;
+                    }
+                    __scrt_release_startup_lock((char)uVar4);
+                    plVar5 = (longlong *)FUN_14000234c();
+                    if ((plVar5 != 0) && (uVar6 = FUN_1400020b0((longlong)plVar5), (char)uVar6 != '\0')) {
+                        ((code *)*plVar5)(0,2,0,in_R9,uVar11);
+                    }
+                    plVar5 = (longlong *)FUN_140002354();
+                    if ((*plVar5 != 0) && (uVar6 = FUN_1400020b0((longlong)plVar5), (char)uVar6 != '\0')) {
+                        _register_thread_local_exe_atexit_callback(*plVar5);
+                    }
+                    uVar7 = _get_initial_narrow_environment();
+                    puVar8 = (undefined8 *)__p___argv();
+                    uVar4 = *puVar8;
+                    puVar9 = (uint *)__p___argc();
+                    uVar10 = (ulonglong)puVar9;
+                    uVar6 = FUN_140001290(uVar10,uVar4,uVar7);
+                    iVar3 = (int)uVar6;
+                    bVar2 = FUN_14000236c();
+                    if (bVar2) {
+                        if (!bVar1) {
+                        _cexit();
+                        }
+                        __scrt_uninitialize_crt(CONCAT71((int7)(uVar10 >> 8),1),'\0');
+                        return uVar6 & 0xffffffff;
+                    }
+                    goto LAB_140001f88;
+                    }
+                }
+                FUN_14000235c(7);
+                LAB_140001f88:
+                                    / WARNING: Subroutine does not return */
+                exit(iVar3);
+                }    
+                </code></pre>
+                </div>
+
+                From here we can see the program expects a username and password -> then plays a song if the two strings match the correct length.
+                You can see the username must be 7 digits and password must be 8.
+
+                Now through checking the strings we find before we can see:
+                Potential Username: crackme
+                Potential Password: Rickroll
+
+                Trying these does in fact work!
+
+                We can verify this by checking the references of the function and we find the address of the username is referenced ;D
+
+                <img src="assets/writeups/CryptoMes/Referecnes.png" alt="command"/>
+
+                Once we run the program we can check that it works and voila we get rickrolled.
+
+                </p>
+                `
+            },
+
         ];
 
         // 4. Load Content
