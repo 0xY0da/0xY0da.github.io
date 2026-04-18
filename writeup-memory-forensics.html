@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Forensics with Volatility | 0xYoda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #050714;
+            --accent-cyan: #2effff;
+            --accent-yellow: #ffe81f;
+            --accent-green: #39ff14;
+            --rebel-red: #ff3e3e;
+            --font-pixel: 'VT323', monospace;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+
+        body {
+            background: var(--bg-color); color: #e0e0e0;
+            font-family: var(--font-mono); padding: 40px 20px;
+            min-height: 100vh; overflow-x: hidden;
+        }
+
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        #hyperspace-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; pointer-events: none; z-index: 10000; transition: opacity 0.2s;
+        }
+        body::after {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%);
+            background-size: 100% 2px; z-index: 9998; pointer-events: none;
+        }
+
+        .hyperspace-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--accent-cyan); font-family: var(--font-pixel); font-size: 1.4em;
+            text-decoration: none; border: 1px solid var(--accent-cyan); padding: 5px 18px;
+            transition: 0.3s; cursor: pointer; background: rgba(0,0,0,0.7);
+            position: relative; z-index: 10; margin-bottom: 30px;
+        }
+        .back-btn:hover { background: var(--accent-cyan); color: #000; }
+
+        .file-container {
+            max-width: 860px; margin: 0 auto;
+            background: rgba(10, 18, 40, 0.95);
+            border: 1px solid rgba(46,255,255,0.3);
+            box-shadow: 0 0 60px rgba(46,255,255,0.07), inset 0 0 40px rgba(0,0,0,0.5);
+            padding: 50px 50px 60px; position: relative; z-index: 5;
+        }
+        .file-container::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, #4d9fff, transparent);
+        }
+
+        .stamp {
+            position: absolute; top: 22px; right: 24px;
+            border: 3px solid #4d9fff; color: #4d9fff;
+            font-family: var(--font-pixel); font-size: 1.8em;
+            padding: 4px 12px; transform: rotate(12deg); opacity: 0.6;
+        }
+
+        .file-header { border-bottom: 1px solid rgba(46,255,255,0.15); padding-bottom: 24px; margin-bottom: 36px; }
+        .category-badge {
+            display: inline-block; font-family: var(--font-pixel); font-size: 1em;
+            color: #4d9fff; border: 1px solid #4d9fff; padding: 2px 14px;
+            letter-spacing: 3px; margin-bottom: 16px;
+        }
+        h1 { font-family: var(--font-pixel); font-size: 3.2em; color: var(--accent-yellow); margin: 0 0 14px; line-height: 1.05; }
+        .meta-row { display: flex; gap: 24px; flex-wrap: wrap; color: #555; font-size: 0.8em; letter-spacing: 1px; }
+        .meta-row span { display: flex; align-items: center; gap: 6px; }
+        .meta-row i { color: #4d9fff; }
+
+        .content { font-size: 1em; line-height: 1.9; color: #ccc; }
+        .content h3 {
+            font-family: var(--font-pixel); font-size: 1.8em; color: #4d9fff;
+            margin: 36px 0 12px; letter-spacing: 2px;
+        }
+        .content h3::before { content: '// '; color: rgba(77,159,255,0.3); }
+        .content p { margin-bottom: 16px; }
+        .content ul, .content ol { margin: 12px 0 20px 24px; display: flex; flex-direction: column; gap: 6px; }
+        .content li::marker { color: #4d9fff; }
+        .content code { background: #0a0f1e; color: var(--accent-yellow); padding: 2px 8px; border: 1px solid #1e2a4a; font-size: 0.92em; }
+        .content pre {
+            background: #060b18; border-left: 3px solid #4d9fff;
+            padding: 20px 24px; overflow-x: auto; margin: 20px 0;
+            font-size: 0.88em; line-height: 1.7; color: #a8c8ff;
+        }
+
+        .callout { background: rgba(77,159,255,0.04); border-left: 3px solid #4d9fff; padding: 14px 20px; margin: 20px 0; }
+        .callout.warn { border-color: var(--accent-yellow); background: rgba(255,232,31,0.04); }
+        .callout-label { font-family: var(--font-pixel); font-size: 1em; letter-spacing: 2px; margin-bottom: 6px; color: #4d9fff; }
+        .callout.warn .callout-label { color: var(--accent-yellow); }
+
+        .vol-cmd { display: flex; flex-direction: column; gap: 4px; margin: 20px 0; }
+        .vol-cmd-row { display: flex; align-items: flex-start; gap: 16px; padding: 10px 16px; background: rgba(0,0,0,0.4); border-left: 2px solid rgba(77,159,255,0.3); }
+        .vol-plugin { font-family: var(--font-pixel); color: #4d9fff; font-size: 1.1em; white-space: nowrap; min-width: 180px; }
+        .vol-desc { font-size: 0.85em; color: #888; }
+
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.88em; }
+        th { background: rgba(77,159,255,0.08); color: #4d9fff; font-family: var(--font-pixel); font-size: 1.1em; padding: 10px 16px; text-align: left; border-bottom: 2px solid rgba(77,159,255,0.2); letter-spacing: 2px; }
+        td { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #bbb; }
+        td code { font-size: 0.88em; }
+        tr:hover td { background: rgba(77,159,255,0.03); }
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+    <div id="hyperspace-overlay"></div>
+
+    <div style="max-width:860px; margin:0 auto; position:relative; z-index:10;">
+        <a href="javascript:void(0)" class="back-btn" onclick="engageHyperspace('index.html'); return false;">
+            <i class="fas fa-chevron-left"></i> RETURN_TO_BASE
+        </a>
+    </div>
+
+    <div class="file-container" id="fileContainer">
+        <div class="stamp">DFIR</div>
+
+        <div class="file-header">
+            <div class="category-badge">DFIR / MEMORY FORENSICS</div>
+            <h1>Memory Forensics: Uncovering Hidden Processes with Volatility</h1>
+            <div class="meta-row">
+                <span><i class="fas fa-calendar"></i> 19 Feb 2026</span>
+                <span><i class="fas fa-shield-halved"></i> Knight</span>
+                <span><i class="fas fa-star"></i> 200 XP</span>
+                <span><i class="fas fa-clock"></i> ~15 min read</span>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <p style="color:#555; font-style:italic;">Content coming soon.</p>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width, height, cx, cy, stars = [];
+        const baseSpeed = 0.3;
+        let speed = baseSpeed, isHyper = false;
+
+        function initStars() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            cx = width / 2; cy = height / 2; stars = [];
+            for (let i = 0; i < 400; i++) stars.push({ x: Math.random() * width - cx, y: Math.random() * height - cy, z: Math.random() * width });
+        }
+
+        function animateStars() {
+            ctx.fillStyle = "rgba(5,7,20,0.85)";
+            ctx.fillRect(0, 0, width, height);
+            stars.forEach(star => {
+                star.z -= speed;
+                if (star.z <= 0) { star.z = width; star.x = Math.random() * width - cx; star.y = Math.random() * height - cy; }
+                const x = (star.x / star.z) * width + cx;
+                const y = (star.y / star.z) * width + cy;
+                const size = Math.max(0.5, (1 - star.z / width) * (isHyper ? 3 : 2));
+                if (isHyper) {
+                    const px = (star.x / (star.z + speed * 10)) * width + cx;
+                    const py = (star.y / (star.z + speed * 10)) * width + cy;
+                    ctx.strokeStyle = `rgba(200,240,255,${1 - star.z / width})`; ctx.lineWidth = size; ctx.lineCap = 'round';
+                    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(px, py); ctx.stroke();
+                } else {
+                    ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.8 + Math.random() * 0.2;
+                    ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+                }
+            });
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', initStars);
+        initStars(); animateStars();
+
+        function engageHyperspace(url) {
+            isHyper = true;
+            const accel = setInterval(() => { if (speed < 60) speed *= 1.2; }, 20);
+            document.body.classList.add('hyperspace-shake');
+            const overlay = document.getElementById('hyperspace-overlay');
+            setTimeout(() => { overlay.style.opacity = '1'; }, 1000);
+            setTimeout(() => { clearInterval(accel); window.location.href = url; }, 1400);
+        }
+    </script>
+</body>
+</html>
